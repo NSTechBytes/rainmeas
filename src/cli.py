@@ -56,7 +56,7 @@ class RainmeasCLI:
         )
         
         # Add version argument to main parser
-        parser.add_argument("--version", action="version", version=f"rainmeas {app_version}")
+        parser.add_argument("-v", "--version", action="version", version=f"rainmeas {app_version}")
         
         # Add subcommands
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
