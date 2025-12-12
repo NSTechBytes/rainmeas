@@ -47,10 +47,16 @@ class RainmeasCLI:
             self.installer = None
     
     def run(self, args: List[str]) -> int:
+        # Get application version
+        app_version = utils.get_app_version()
+        
         parser = argparse.ArgumentParser(
             prog="rainmeas",
             description="Rainmeas CLI for managing Rainmeter skin packages"
         )
+        
+        # Add version argument to main parser
+        parser.add_argument("--version", action="version", version=f"rainmeas {app_version}")
         
         # Add subcommands
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -89,7 +95,6 @@ class RainmeasCLI:
         
         # Version command
         version_parser = subparsers.add_parser("version", help="Show CLI version")
-        version_parser.add_argument("--version", action="version", version="rainmeas 0.1.0")
         
         # Help command
         help_parser = subparsers.add_parser("help", help="Show help")
@@ -256,7 +261,8 @@ class RainmeasCLI:
     
     def version(self) -> int:
         """Show version"""
-        print("rainmeas 0.1.0")
+        app_version = utils.get_app_version()
+        print(f"rainmeas {app_version}")
         return 0
 
 def main():

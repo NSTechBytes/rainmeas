@@ -1,8 +1,11 @@
+#!/usr/bin/env python3
 import sys
 import os
 
-# Add the src directory to the path
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
+# Add the src directory to the path (adjusting for new location in test folder)
+script_dir = os.path.dirname(os.path.abspath(__file__))
+src_path = os.path.join(script_dir, '..', 'src')
+sys.path.insert(0, src_path)
 
 # Now we can import the modules directly
 import cli

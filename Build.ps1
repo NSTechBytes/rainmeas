@@ -10,6 +10,18 @@ $IconPath = Join-Path $AssetsDir "icon.ico"
 $EntryPoint = Join-Path $ScriptDir "run_cli.py"
 $NsisDir = Join-Path $ScriptDir "nsi-installer"
 $NsisScript = Join-Path $NsisDir "setup.nsi"
+$VersionFile = Join-Path $ScriptDir "VERSION"
+$GenerateNsisScript = Join-Path $NsisDir "GenerateNsisScript.ps1"
+
+# Read version from VERSION file
+if (Test-Path $VersionFile) {
+    $AppVersion = Get-Content $VersionFile -First 1
+    $AppVersion = $AppVersion.Trim()
+    Write-Host "Application version: $AppVersion"
+} else {
+    Write-Error "Version file not found: $VersionFile"
+    exit 1
+}
 
 # Check if required files exist
 if (-not (Test-Path $EntryPoint)) {
@@ -45,7 +57,7 @@ try {
 
 # Build the executable with proper module inclusion
 Write-Host "Building rainmeas executable..."
-& pyinstaller --onefile --console --icon="$IconPath" --name="rainmeas" --distpath="$OutputDir" --workpath="$ScriptDir\build" --specpath="$ScriptDir" --add-data="$SrcDir;src" --add-data="$AssetsDir;assets" "$EntryPoint"
+& pyinstaller --onefile --console --icon="$IconPath" --name="rainmeas" --distpath="$OutputDir" --workpath="$ScriptDir\build" --specpath="$ScriptDir" --add-data="$SrcDir;src" --add-data="$AssetsDir;assets" --add-data="$VersionFile;." "$EntryPoint"
 
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Failed to build executable"
@@ -80,6 +92,22 @@ if ($null -eq $NsisExe) {
     exit 0
 }
 
+# Check if NSIS script generator exists
+if (-not (Test-Path $GenerateNsisScript)) {
+    Write-Error "NSIS script generator not found: $GenerateNsisScript"
+    exit 1
+}
+
+# Generate the NSIS script with the correct version
+Write-Host "Generating NSIS script..."
+# Pass the version file path and output file path explicitly to the GenerateNsisScript.ps1
+& powershell -ExecutionPolicy Bypass -File "$GenerateNsisScript" -VersionFile "$VersionFile" -OutputFile "$NsisScript"
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "Failed to generate NSIS script"
+    exit 1
+}
+
 # Check if NSIS script exists
 if (-not (Test-Path $NsisScript)) {
     Write-Error "NSIS script not found: $NsisScript"
@@ -96,4 +124,4 @@ if ($LASTEXITCODE -ne 0) {
 }
 
 Write-Host "Installer build successful!"
-Write-Host "Installer location: $(Join-Path $OutputDir "rainmeas-setup.exe")"
+Write-Host "Installer location: $(Join-Path $OutputDir "rainmeas_v$AppVersion`_setup.exe")"

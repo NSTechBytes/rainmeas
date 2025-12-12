@@ -8,13 +8,20 @@ if os.path.exists(readme_path):
     with open(readme_path, "r", encoding="utf-8") as fh:
         long_description = fh.read()
 
+# Read version from VERSION file
+version = "0.0.1"  # Default fallback version
+version_path = os.path.join(os.path.dirname(__file__), "VERSION")
+if os.path.exists(version_path):
+    with open(version_path, "r") as f:
+        version = f.read().strip()
+
 setup(
     name="rainmeas",
-    version="0.1.0",
+    version=version,
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     package_data={
-        "": ["../assets/*.ico"],
+        "": ["../assets/*.ico", "../VERSION"],
     },
     include_package_data=True,
     entry_points={

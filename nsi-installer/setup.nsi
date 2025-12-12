@@ -6,7 +6,7 @@
 Name "Rainmeas"
 
 ; The file to write
-OutFile "..\dist\rainmeas-setup.exe"
+OutFile "..\dist\rainmeas_v0.0.1_setup.exe"
 
 ; The default installation directory
 InstallDir "$PROGRAMFILES\Rainmeas"
@@ -86,7 +86,7 @@ Section "Rainmeas" SecMain
   
   ; Add to Add/Remove Programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
-                   "DisplayName" "Rainmeas"
+                   "DisplayName" "Rainmeas v0.0.1"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
                    "UninstallString" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
@@ -95,6 +95,8 @@ Section "Rainmeas" SecMain
                    "Publisher" "Rainmeas Team"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
                    "HelpLink" "https://github.com/Rainmeas/rainmeas"
+  WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
+                   "DisplayVersion" "0.0.1"
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
                    "NoModify" 1
   WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \

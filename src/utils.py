@@ -14,6 +14,28 @@ def resource_path(relative_path):
 
     return os.path.join(base_path, relative_path)
 
+def get_app_version():
+    """Get application version from VERSION file"""
+    # Try to find VERSION file in different locations
+    version_file_paths = [
+        resource_path("VERSION"),  # For PyInstaller
+        os.path.join(os.path.dirname(__file__), "..", "VERSION"),  # For development
+        os.path.join(os.path.dirname(__file__), "..", "..", "VERSION"),  # For development
+        "VERSION"  # Current directory
+    ]
+    
+    for version_file in version_file_paths:
+        if os.path.exists(version_file):
+            try:
+                with open(version_file, 'r') as f:
+                    version = f.read().strip()
+                    return version
+            except Exception:
+                continue
+    
+    # Default version if VERSION file is not found
+    return "0.0.1"
+
 def find_rainmeter_skin_root(start_path: str = ".") -> Optional[str]:
     """Find the root of a Rainmeter skin by looking for key files/directories"""
     current_path = os.path.abspath(start_path)
