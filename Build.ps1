@@ -11,7 +11,6 @@ $EntryPoint = Join-Path $ScriptDir "run_cli.py"
 $NsisDir = Join-Path $ScriptDir "nsi-installer"
 $NsisScript = Join-Path $NsisDir "setup.nsi"
 $VersionFile = Join-Path $ScriptDir "VERSION"
-$GenerateNsisScript = Join-Path $NsisDir "GenerateNsisScript.ps1"
 
 # Read version from VERSION file
 if (Test-Path $VersionFile) {
@@ -90,22 +89,6 @@ if ($null -eq $NsisExe) {
     Write-Host ""
     Write-Host "After installing NSIS, you can run this script again to build the installer."
     exit 0
-}
-
-# Check if NSIS script generator exists
-if (-not (Test-Path $GenerateNsisScript)) {
-    Write-Error "NSIS script generator not found: $GenerateNsisScript"
-    exit 1
-}
-
-# Generate the NSIS script with the correct version
-Write-Host "Generating NSIS script..."
-# Pass the version file path and output file path explicitly to the GenerateNsisScript.ps1
-& powershell -ExecutionPolicy Bypass -File "$GenerateNsisScript" -VersionFile "$VersionFile" -OutputFile "$NsisScript"
-
-if ($LASTEXITCODE -ne 0) {
-    Write-Error "Failed to generate NSIS script"
-    exit 1
 }
 
 # Check if NSIS script exists

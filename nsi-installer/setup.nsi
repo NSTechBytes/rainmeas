@@ -23,6 +23,16 @@ RequestExecutionLevel admin
 ;--------------------------------
 !include "MUI2.nsh"
 
+;--------------------------------
+; Windows Message Constants
+;--------------------------------
+!ifndef WM_WININICHANGE
+!define WM_WININICHANGE 0x001A
+!endif
+!ifndef HWND_BROADCAST
+!define HWND_BROADCAST 0xFFFF
+!endif
+
 ; Icon
 !define MUI_ICON "assets\installer.ico"
 !define MUI_UNICON "assets\uninstall.ico"
@@ -108,13 +118,16 @@ SectionEnd
 Section "Add to PATH" SecPATH
 
   ; Add the installation directory to the PATH
-  ; Since EnVar plugin might not be available, we'll use a simpler approach
-  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" \
-                   "PATH" "$INSTDIR;$%PATH%"
+  ; Read the current PATH
+  ReadEnvStr $R0 "PATH"
+  ; Append our installation directory to the PATH
+  StrCpy $R1 "$R0;$INSTDIR"
+  ; Write the updated PATH back to the registry
+  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH" $R1
   
-  ; Set Section flag
-  SectionIn RO
-
+  ; Send a message to all applications to let them know the PATH has changed
+  SendMessage ${HWND_BROADCAST} ${WM_WININICHANGE} 0 "STR:Environment" /TIMEOUT=5000
+  
 SectionEnd
 
 ; Optional section (can be disabled by the user)
@@ -160,10 +173,77 @@ Section "Uninstall"
   ; Remove directories used
   RMDir "$INSTDIR"
 
-  ; Remove from PATH (simple approach)
-  DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH"
+  ; Remove rainmeas from PATH
+  ReadEnvStr $R0 "PATH"
+  ; Remove our installation directory from the PATH
+  Push $R0
+  Push "$INSTDIR"
+  Call un.RemoveFromPath
+  Pop $R1
+  ; Write the updated PATH back to the registry
+  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH" $R1
   
   ; Remove desktop shortcut
   Delete "$DESKTOP\Rainmeas.lnk"
 
 SectionEnd
+
+; Function to remove a directory from the PATH environment variable
+Function un.RemoveFromPath
+  Exch $0 ; directory to remove
+  Exch
+  Exch $1 ; PATH variable
+  Push $2
+  Push $3
+  Push $4
+  Push $5
+  
+  ; Backup the original PATH
+  StrCpy $2 $1
+  
+  ; Loop to find and remove all instances of the directory
+  loop:
+    ; Find the directory in the PATH
+    StrCpy $3 $2 1 0
+    StrCmp $3 "" done
+    StrCpy $4 $2 "" 0
+    StrCpy $5 $4 1 0
+    StrCmp $5 ";" 0 +2
+    StrCpy $4 $4 "" 1
+    StrCmp $4 $0 0 next
+    
+    ; Found the directory, remove it
+    StrLen $3 $0
+    StrCpy $4 $2 "" $3
+    StrCpy $2 $2 $3
+    StrCpy $2 $2$4
+    
+    Goto loop
+    
+    next:
+      StrCpy $3 $2 1 0
+      StrCmp $3 "" done
+      StrCpy $4 $2 "" 1
+      StrCpy $2 $4
+      Goto loop
+      
+  done:
+    ; Remove trailing semicolon if present
+    StrCpy $3 $2 "" -1
+    StrCmp $3 ";" 0 +2
+    StrCpy $2 $2 -1
+    
+    ; Remove leading semicolon if present
+    StrCpy $3 $2 1 0
+    StrCmp $3 ";" 0 +2
+    StrCpy $2 $2 "" 1
+    
+    ; Return the modified PATH
+    Pop $5
+    Pop $4
+    Pop $3
+    Exch $2
+    Exch
+    Pop $0
+    Exch $1
+FunctionEnd

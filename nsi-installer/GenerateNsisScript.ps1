@@ -32,6 +32,7 @@ if ($VersionFile -and (Test-Path $VersionFile)) {
 }
 
 # Create the NSIS script from template
+# We need to be careful with dollar signs in the NSIS script
 $nsisContent = @"
 `;--------------------------------
 `; Rainmeas Installer Script
@@ -44,7 +45,7 @@ Name "Rainmeas"
 OutFile "..\dist\rainmeas_v$AppVersion`_setup.exe"
 
 `; The default installation directory
-InstallDir "`$PROGRAMFILES\Rainmeas"
+InstallDir "`$`$PROGRAMFILES\Rainmeas"
 
 `; Registry key to check for directory (so if you install again, it will 
 `; overwrite the old one automatically)
@@ -76,7 +77,7 @@ RequestExecutionLevel admin
 !define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of Rainmeas, a package manager for Rainmeter skins.`$`\r`$`\n`$`\r`$`\nClick Next to continue."
 
 `; Finish page
-!define MUI_FINISHPAGE_RUN "`$INSTDIR\rainmeas.exe"
+!define MUI_FINISHPAGE_RUN "`$`$INSTDIR\rainmeas.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Run Rainmeas CLI"
 
 `; Installer pages
@@ -106,7 +107,7 @@ LicenseData "..\LICENSE"
 
 Section "Rainmeas" SecMain
 
-  SetOutPath "`$INSTDIR"
+  SetOutPath "`$`$INSTDIR"
   
   `; Add files
   File "..\dist\rainmeas.exe"
@@ -114,18 +115,18 @@ Section "Rainmeas" SecMain
   File "..\README.md"
   
   `; Store installation folder
-  WriteRegStr HKLM "Software\Rainmeas" "Install_Dir" "`$INSTDIR"
+  WriteRegStr HKLM "Software\Rainmeas" "Install_Dir" "`$`$INSTDIR"
   
   `; Create uninstaller
-  WriteUninstaller "`$INSTDIR\Uninstall.exe"
+  WriteUninstaller "`$`$INSTDIR\Uninstall.exe"
   
   `; Add to Add/Remove Programs
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
                    "DisplayName" "Rainmeas v$AppVersion"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
-                   "UninstallString" "`$INSTDIR\Uninstall.exe"
+                   "UninstallString" "`$`$INSTDIR\Uninstall.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
-                   "DisplayIcon" "`$INSTDIR\rainmeas.exe"
+                   "DisplayIcon" "`$`$INSTDIR\rainmeas.exe"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
                    "Publisher" "Rainmeas Team"
   WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Rainmeas" \
@@ -143,9 +144,12 @@ SectionEnd
 Section "Add to PATH" SecPATH
 
   `; Add the installation directory to the PATH
-  `; Since EnVar plugin might not be available, we'll use a simpler approach
-  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" \
-                   "PATH" "`$INSTDIR;`$%PATH%"
+  `; Read the current PATH
+  ReadEnvStr `$R0 "PATH"
+  `; Append our installation directory to the PATH
+  StrCpy `$R1 "`$R0;`$INSTDIR"
+  `; Write the updated PATH back to the registry
+  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH" `$R1
   
   `; Set Section flag
   SectionIn RO
@@ -156,7 +160,7 @@ SectionEnd
 Section "Desktop Shortcut" SecDesktop
 
   `; Create desktop shortcut
-  CreateShortCut "`$DESKTOP\Rainmeas.lnk" "`$INSTDIR\rainmeas.exe" "" "`$INSTDIR\rainmeas.exe" 0
+  CreateShortCut "`$`$DESKTOP\Rainmeas.lnk" "`$`$INSTDIR\rainmeas.exe" "" "`$`$INSTDIR\rainmeas.exe" 0
   
 SectionEnd
 
@@ -187,21 +191,88 @@ Section "Uninstall"
   DeleteRegKey HKLM "Software\Rainmeas"
 
   `; Remove files and uninstaller
-  Delete "`$INSTDIR\rainmeas.exe"
-  Delete "`$INSTDIR\LICENSE"
-  Delete "`$INSTDIR\README.md"
-  Delete "`$INSTDIR\Uninstall.exe"
+  Delete "`$`$INSTDIR\rainmeas.exe"
+  Delete "`$`$INSTDIR\LICENSE"
+  Delete "`$`$INSTDIR\README.md"
+  Delete "`$`$INSTDIR\Uninstall.exe"
 
   `; Remove directories used
-  RMDir "`$INSTDIR"
+  RMDir "`$`$INSTDIR"
 
-  `; Remove from PATH (simple approach)
-  DeleteRegValue HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH"
+  `; Remove rainmeas from PATH
+  ReadEnvStr `$R0 "PATH"
+  `; Remove our installation directory from the PATH
+  Push `$R0
+  Push "`$INSTDIR"
+  Call un.RemoveFromPath
+  Pop `$R1
+  `; Write the updated PATH back to the registry
+  WriteRegStr HKLM "SYSTEM\CurrentControlSet\Control\Session Manager\Environment" "PATH" `$R1
   
   `; Remove desktop shortcut
-  Delete "`$DESKTOP\Rainmeas.lnk"
+  Delete "`$`$DESKTOP\Rainmeas.lnk"
 
 SectionEnd
+
+`; Function to remove a directory from the PATH environment variable
+Function un.RemoveFromPath
+  Exch `$0 `; directory to remove
+  Exch
+  Exch `$1 `; PATH variable
+  Push `$2
+  Push `$3
+  Push `$4
+  Push `$5
+  
+  `; Backup the original PATH
+  StrCpy `$2 `$1
+  
+  `; Loop to find and remove all instances of the directory
+  loop:
+    `; Find the directory in the PATH
+    StrCpy `$3 `$2 1 0
+    StrCmp `$3 "" done
+    StrCpy `$4 `$2 "" 0
+    StrCpy `$5 `$4 1 0
+    StrCmp `$5 ";" 0 +2
+    StrCpy `$4 `$4 "" 1
+    StrCmp `$4 `$0 0 next
+    
+    `; Found the directory, remove it
+    StrLen `$3 `$0
+    StrCpy `$4 `$2 "" `$3
+    StrCpy `$2 `$2 `$3
+    StrCpy `$2 `$2`$4
+    
+    Goto loop
+    
+    next:
+      StrCpy `$3 `$2 1 0
+      StrCmp `$3 "" done
+      StrCpy `$4 `$2 "" 1
+      StrCpy `$2 `$4
+      Goto loop
+      
+  done:
+    `; Remove trailing semicolon if present
+    StrCpy `$3 `$2 "" -1
+    StrCmp `$3 ";" 0 +2
+    StrCpy `$2 `$2 -1
+    
+    `; Remove leading semicolon if present
+    StrCpy `$3 `$2 1 0
+    StrCmp `$3 ";" 0 +2
+    StrCpy `$2 `$2 "" 1
+    
+    `; Return the modified PATH
+    Pop `$5
+    Pop `$4
+    Pop `$3
+    Exch `$2
+    Exch
+    Pop `$0
+    Exch `$1
+FunctionEnd
 "@
 
 # Write the NSIS script
