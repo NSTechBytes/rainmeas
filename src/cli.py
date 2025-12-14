@@ -39,6 +39,7 @@ except Exception as e:
 
 class RainmeasCLI:
     def __init__(self):
+        # Use remote registry only
         self.registry = registry.Registry()
         self.skin_root = utils.find_rainmeter_skin_root()
         if self.skin_root:
