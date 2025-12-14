@@ -63,7 +63,7 @@ RequestExecutionLevel admin
 
 ; Installer pages
 !insertmacro MUI_PAGE_WELCOME
-!insertmacro MUI_PAGE_LICENSE "..\LICENSE"
+!undef MUI_PAGE_LICENSE
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
@@ -79,9 +79,6 @@ RequestExecutionLevel admin
 ; Data
 ;--------------------------------
 
-; License data
-LicenseData "..\LICENSE"
-
 ;--------------------------------
 ; Sections
 ;--------------------------------
@@ -92,8 +89,6 @@ Section "Rainmeas" SecMain
   
   ; Add files
   File "..\dist\rainmeas.exe"
-  File "..\LICENSE"
-  File "..\README.md"
   
   ; Store installation folder
   WriteRegStr HKLM "Software\Rainmeas" "Install_Dir" "$INSTDIR"
@@ -177,8 +172,6 @@ Section "Uninstall"
 
   ; Remove files and uninstaller
   Delete "$INSTDIR\rainmeas.exe"
-  Delete "$INSTDIR\LICENSE"
-  Delete "$INSTDIR\README.md"
   Delete "$INSTDIR\Uninstall.exe"
 
   ; Remove directories used
