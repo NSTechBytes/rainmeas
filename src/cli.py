@@ -67,7 +67,11 @@ class RainmeasCLI:
         
         # Install command
         install_parser = subparsers.add_parser("install", help="Install a package")
-        install_parser.add_argument("package", help="Package name and optional version (e.g., nurashadeweather or nurashadeweather@1.1.0)")
+        install_parser.add_argument("package", nargs="?", help="Package name and optional version (e.g., nurashadeweather or nurashadeweather@1.1.0)")
+        
+        # Alias for install command
+        i_parser = subparsers.add_parser("i", help="Install a package (alias for install)")
+        i_parser.add_argument("package", nargs="?", help="Package name and optional version (e.g., nurashadeweather or nurashadeweather@1.1.0)")
         
         # Remove command
         remove_parser = subparsers.add_parser("remove", help="Remove a package")
@@ -106,10 +110,15 @@ class RainmeasCLI:
         # Execute command
         if parsed_args.command == "init":
             return self.init()
-        elif parsed_args.command == "install":
-            if "@" in parsed_args.package:
+        elif parsed_args.command in ["install", "i"]:
+            # Check if we're installing all packages from rainmeas-package.json
+            if not parsed_args.package:
+                return self.install_all_from_config()
+            # Check if we're installing a specific package with version
+            elif "@" in parsed_args.package:
                 package_name, version = parsed_args.package.split("@", 1)
                 return self.install(package_name, version)
+            # Install a specific package with latest version
             else:
                 return self.install(parsed_args.package)
         elif parsed_args.command == "remove":
@@ -391,6 +400,55 @@ class RainmeasCLI:
         app_version = utils.get_app_version()
         print(f"rainmeas {app_version}")
         return 0
+    
+    def install_all_from_config(self) -> int:
+        """Install all packages specified in rainmeas-package.json"""
+        if not self.installer:
+            print("Error: Not in a Rainmeter skin directory")
+            return 1
+        
+        # Import json module
+        import json
+        
+        # Load the rainmeas-package.json file from current directory
+        config_path = "rainmeas-package.json"
+        if not os.path.exists(config_path):
+            print("Error: rainmeas-package.json not found in current directory")
+            return 1
+        
+        try:
+            with open(config_path, 'r') as f:
+                config = json.load(f)
+        except Exception as e:
+            print(f"Error reading rainmeas-package.json: {e}")
+            return 1
+        
+        packages = config.get("packages", {})
+        if not packages:
+            print("No packages specified in rainmeas-package.json")
+            return 0
+        
+        success_count = 0
+        fail_count = 0
+        
+        print("Installing packages from rainmeas-package.json...")
+        
+        for package_name, version in packages.items():
+            # Handle @latest version specifier
+            if version == "@latest":
+                result = self.install(package_name, "latest")
+            else:
+                result = self.install(package_name, version)
+            
+            if result == 0:
+                success_count += 1
+            else:
+                fail_count += 1
+        
+        print(f"\nInstallation summary: {success_count} succeeded, {fail_count} failed")
+        return 0 if fail_count == 0 else 1
+    
+
 
 def main():
     """Main entry point"""
