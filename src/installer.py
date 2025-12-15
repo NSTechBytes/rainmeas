@@ -5,7 +5,7 @@ import sys
 import urllib.request
 import zipfile
 import tempfile
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Set
 
 # Handle PyInstaller environment
 def resource_path(relative_path):
@@ -44,9 +44,16 @@ class Installer:
         self.skin_root = skin_root
         self.registry = registry
         self.modules_dir = os.path.join(skin_root, "@Resources", "@rainmeas-modules")
+        # Track installed packages to avoid circular dependencies
+        self._installed_packages: Set[str] = set()
     
     def install_package(self, package_name: str, version: str = "latest") -> bool:
-        """Install a package"""
+        """Install a package and its dependencies"""
+        # Check for circular dependency
+        if package_name in self._installed_packages:
+            print(f"Skipping {package_name} (already installed in this session)")
+            return True
+            
         # Get package info from registry
         package_info = self.registry.get_package_info(package_name)
         if not package_info:
@@ -72,6 +79,19 @@ class Installer:
         if not download_url:
             print(f"No download URL found for {package_name}@{version}")
             return False
+        
+        # Check for dependencies and install them first
+        dependencies = self._get_package_dependencies(package_info, version)
+        if dependencies:
+            print(f"Found dependencies for {package_name}@{version}:")
+            for dep_name, dep_version in dependencies.items():
+                print(f"  Installing dependency: {dep_name}@{dep_version}")
+                if not self.install_package(dep_name, dep_version):
+                    print(f"Failed to install dependency {dep_name}@{dep_version}")
+                    return False
+        
+        # Mark as being installed to prevent circular dependencies
+        self._installed_packages.add(package_name)
         
         # Create modules directory if it doesn't exist
         os.makedirs(self.modules_dir, exist_ok=True)
@@ -119,6 +139,13 @@ class Installer:
         
         print(f"Successfully installed {package_name}@{version}")
         return True
+    
+    def _get_package_dependencies(self, package_info: Dict[str, Any], version: str) -> Dict[str, str]:
+        """Get dependencies for a specific package version"""
+        versions = package_info.get("versions", {})
+        
+        # Check if dependencies are defined at the versions level (same level as version keys)
+        return versions.get("dependencies", {})
     
     def remove_package(self, package_name: str) -> bool:
         """Remove a package"""
@@ -168,3 +195,28 @@ class Installer:
     def list_installed_packages(self) -> Dict[str, str]:
         """List all installed packages"""
         return self._get_installed_packages()
+    
+    def install_all_packages(self, packages: Dict[str, str]) -> bool:
+        """Install all packages with dependency handling"""
+        success_count = 0
+        fail_count = 0
+        
+        print("Installing packages with dependency resolution...")
+        
+        # Reset the installed packages tracker for this session
+        self._installed_packages.clear()
+        
+        for package_name, version in packages.items():
+            # Handle @latest version specifier
+            if version == "@latest":
+                result = self.install_package(package_name, "latest")
+            else:
+                result = self.install_package(package_name, version)
+            
+            if result:
+                success_count += 1
+            else:
+                fail_count += 1
+        
+        print(f"\nInstallation summary: {success_count} succeeded, {fail_count} failed")
+        return fail_count == 0

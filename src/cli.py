@@ -417,26 +417,11 @@ class RainmeasCLI:
             print("No packages specified in rainmeas-package.json")
             return 0
         
-        success_count = 0
-        fail_count = 0
-        
-        print("Installing packages from rainmeas-package.json...")
-        
-        for package_name, version in packages.items():
-            # Handle @latest version specifier
-            if version == "@latest":
-                result = self.install(package_name, "latest")
-            else:
-                result = self.install(package_name, version)
-            
-            if result == 0:
-                success_count += 1
-            else:
-                fail_count += 1
-        
-        print(f"\nInstallation summary: {success_count} succeeded, {fail_count} failed")
-        return 0 if fail_count == 0 else 1
-    
+        # Use the installer's method that handles dependencies
+        if self.installer.install_all_packages(packages):
+            return 0
+        else:
+            return 1
 
 
 def main():
