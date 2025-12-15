@@ -55,7 +55,7 @@ RequestExecutionLevel admin
 
 ; Welcome page
 !define MUI_WELCOMEPAGE_TITLE "Welcome to the Rainmeas Setup Wizard"
-!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of Rainmeas, a package manager for Rainmeter skins.$\r$\n$\r$\nClick Next to continue."
+!define MUI_WELCOMEPAGE_TEXT "This wizard will guide you through the installation of Rainmeas, a package manager for Rainmeter modules.$\r$\n$\r$\nClick Next to continue."
 
 ; Finish page
 !define MUI_FINISHPAGE_RUN "$INSTDIR\rainmeas.exe"

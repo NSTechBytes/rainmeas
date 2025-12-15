@@ -38,7 +38,7 @@ def get_app_version():
     return "0.0.1"
 
 # Removed find_rainmeter_skin_root function as per user request
-# Not all skins have @Resources folder, so we don't check for skin directories
+# Not all modules have @Resources folder, so we don't check for module directories
 
 def load_rainmeas_config(skin_root: str) -> Dict[str, Any]:
     """Load the rainmeas-package.json configuration file"""

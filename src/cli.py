@@ -44,7 +44,7 @@ class RainmeasCLI:
         # Use remote registry only
         self.registry = registry.Registry()
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we initialize without checking
+        # Not all modules have @Resources folder, so we initialize without checking
         self.skin_root = os.getcwd()  # Use current directory as default
         self.installer = installer.Installer(self.skin_root, self.registry)
     
@@ -54,7 +54,7 @@ class RainmeasCLI:
         
         parser = argparse.ArgumentParser(
             prog="rainmeas",
-            description="Rainmeas CLI for managing Rainmeter skin packages"
+            description="Rainmeas CLI for managing Rainmeter module packages"
         )
         
         # Add version argument to main parser
@@ -64,7 +64,7 @@ class RainmeasCLI:
         subparsers = parser.add_subparsers(dest="command", help="Available commands")
         
         # Init command
-        init_parser = subparsers.add_parser("init", help="Initialize Rainmeas in a Rainmeter skin")
+        init_parser = subparsers.add_parser("init", help="Initialize Rainmeas in a Rainmeter modules directory")
         
         # Install command
         install_parser = subparsers.add_parser("install", help="Install a package or all packages from rainmeas-package.json")
@@ -151,7 +151,7 @@ class RainmeasCLI:
     def init(self) -> int:
         """Initialize Rainmeas in current directory"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         print(f"Initializing Rainmeas in {self.skin_root}")
         # Create necessary directories and files
@@ -172,7 +172,7 @@ class RainmeasCLI:
     def install(self, package_name: str, version: str = "latest") -> int:
         """Install a package"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         if self.installer.install_package(package_name, version):
             return 0
@@ -182,7 +182,7 @@ class RainmeasCLI:
     def remove(self, package_name: str) -> int:
         """Remove a package"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         if self.installer.remove_package(package_name):
             return 0
@@ -192,7 +192,7 @@ class RainmeasCLI:
     def update_package(self, package_name: str) -> int:
         """Update a specific package"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         # Check if package is installed
         installed_packages = self.installer.list_installed_packages()
@@ -228,7 +228,7 @@ class RainmeasCLI:
     def update_all(self) -> int:
         """Update all packages"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         # Get installed packages
         installed_packages = self.installer.list_installed_packages()
@@ -275,7 +275,7 @@ class RainmeasCLI:
     def list_packages(self) -> int:
         """List installed packages"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         packages = self.installer.list_installed_packages()
         if not packages:
@@ -328,7 +328,7 @@ class RainmeasCLI:
     def verify(self) -> int:
         """Verify package integrity"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         # Get installed packages
         installed_packages = self.installer.list_installed_packages()
@@ -356,7 +356,7 @@ class RainmeasCLI:
     def clean(self) -> int:
         """Clean unused modules"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         # Get installed packages from config
         installed_packages = self.installer.list_installed_packages()
@@ -397,7 +397,7 @@ class RainmeasCLI:
     def install_all_from_config(self) -> int:
         """Install all packages specified in rainmeas-package.json"""
         # Removed skin directory check as per user request
-        # Not all skins have @Resources folder, so we proceed without validation
+        # Not all modules have @Resources folder, so we proceed without validation
         
         # Load the rainmeas-package.json file from current directory
         config_path = "rainmeas-package.json"
